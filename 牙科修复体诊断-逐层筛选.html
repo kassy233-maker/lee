@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>牙科修复体问题诊断系统 - 逐层筛选</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 300px 1fr 1fr;
+            gap: 25px;
+            height: calc(100vh - 40px);
+        }
+        
+        @media (max-width: 1200px) {
+            .container {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+            
+            .panel {
+                min-height: 400px;
+            }
+        }
+        
+        header {
+            grid-column: 1 / -1;
+            background: linear-gradient(to right, #1a237e, #3949ab);
+            color: white;
+            padding: 25px 30px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 25px rgba(26, 35, 126, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        header h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        header h1 i {
+            font-size: 2.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 50%;
+        }
+        
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 800px;
+            line-height: 1.6;
+        }
+        
+        .header-pattern {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 300px;
+            height: 100%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path fill="rgba(255,255,255,0.05)" d="M50,0 C77.614,0 100,22.386 100,50 C100,77.614 77.614,100 50,100 C22.386,100 0,77.614 0,50 C0,22.386 22.386,0 50,0 Z M50,20 C64.359,20 76,31.641 76,46 C76,60.359 64.359,72 50,72 C35.641,72 24,60.359 24,46 C24,31.641 35.641,20 50,20 Z"></path></svg>');
+            background-size: 200px;
+            opacity: 0.3;
+        }
+        
+        .panel {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .panel-header {
+            padding: 25px;
+            background: linear-gradient(to right, #f8f9fa, #e9ecef);
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .panel-header i {
+            font-size: 1.8rem;
+            color: #3949ab;
+        }
+        
+        .panel-title {
+            font-size: 1.4rem;
+            color: #1a237e;
+            font-weight: 600;
+        }
+        
+        .panel-subtitle {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+        
+        .panel-content {
+            padding: 25px;
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .panel-content::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .panel-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        .panel-content::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 10px;
+        }
+        
+        .step-indicator {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .step {
+            display: flex;
+            align-items: center;
+            margin-right: 10px;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        .step.active {
+            color: #1a237e;
+            font-weight: 600;
+        }
+        
+        .step-number {
+            width: 28px;
+            height: 28px;
+            background: #e9ecef;
+            color: #6c757d;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .step.active .step-number {
+            background: #3949ab;
+            color: white;
+        }
+        
+        .step-separator {
+            margin: 0 10px;
+            color: #adb5bd;
+        }
+        
+        .category-section {
+            margin-bottom: 30px;
+        }
+        
+        .category-title {
+            font-size: 1.1rem;
+            color: #495057;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px dashed #dee2e6;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .category-title i {
+            color: #6c757d;
+        }
+        
+        .problem-list, .cause-list, .solution-list {
+            list-style: none;
+        }
+        
+        .problem-item, .cause-item, .solution-item {
+            padding: 18px 20px;
+            margin-bottom: 12px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-left: 4px solid #adb5bd;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .problem-item {
+            border-left-color: #3949ab;
+        }
+        
+        .cause-item {
+            border-left-color: #ff9800;
+        }
+        
+        .solution-item {
+            border-left-color: #4caf50;
+            cursor: default;
+        }
+        
+        .problem-item:hover, .cause-item:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .problem-item.active {
+            background: #e8eaf6;
+            box-shadow: 0 5px 15px rgba(57, 73, 171, 0.1);
+        }
+        
+        .cause-item.active {
+            background: #fff3e0;
+            box-shadow: 0 5px 15px rgba(255, 152, 0, 0.1);
+        }
+        
+        .problem-text, .cause-text, .solution-text {
+            font-weight: 600;
+            font-size: 1.05rem;
+            color: #2c3e50;
+            flex: 1;
+        }
+        
+        .cause-text, .solution-text {
+            font-weight: 500;
+        }
+        
+        .solution-text {
+            color: #388e3c;
+        }
+        
+        .item-icon {
+            color: #6c757d;
+            font-size: 1.2rem;
+            margin-left: 15px;
+            transition: all 0.3s;
+        }
+        
+        .problem-item:hover .item-icon, .cause-item:hover .item-icon {
+            color: #3949ab;
+            transform: translateX(3px);
+        }
+        
+        .solution-item .item-icon {
+            color: #4caf50;
+        }
+        
+        .solution-detail {
+            background: #f1f8e9;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 10px;
+            border-left: 4px solid #8bc34a;
+        }
+        
+        .solution-detail-title {
+            font-size: 1.1rem;
+            color: #689f38;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .solution-detail-content {
+            line-height: 1.6;
+            color: #555;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6c757d;
+        }
+        
+        .empty-state i {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            color: #adb5bd;
+        }
+        
+        .empty-state h3 {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+        }
+        
+        .empty-state p {
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+        
+        .path-display {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .path-title {
+            font-size: 1rem;
+            color: #495057;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .path-steps {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .path-step {
+            background: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: #495057;
+            border: 1px solid #dee2e6;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .path-arrow {
+            color: #adb5bd;
+            font-size: 0.9rem;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        
+        .action-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+        
+        .reset-btn {
+            background: #f8f9fa;
+            color: #495057;
+            border: 1px solid #dee2e6;
+        }
+        
+        .reset-btn:hover {
+            background: #e9ecef;
+        }
+        
+        .save-path-btn {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        
+        .save-path-btn:hover {
+            background: #bbdefb;
+        }
+        
+        .print-btn {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+        
+        .print-btn:hover {
+            background: #c8e6c9;
+        }
+        
+        footer {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 25px 0;
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-top: 30px;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .counter {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+        }
+        
+        .counter-item {
+            text-align: center;
+        }
+        
+        .counter-number {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #3949ab;
+        }
+        
+        .counter-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-tooth"></i> 牙科修复体问题诊断系统 - 逐层筛选</h1>
+            <p>通过点击选项逐层筛选：问题 → 原因 → 解决方案。点击问题查看相关原因，点击原因查看对应解决方案。</p>
+            <div class="header-pattern"></div>
+        </header>
+        
+        <!-- 第一步：问题选择面板 -->
+        <div class="panel" id="problemPanel">
+            <div class="panel-header">
+                <i class="fas fa-clipboard-list"></i>
+                <div>
+                    <div class="panel-title">第一步：选择问题</div>
+                    <div class="panel-subtitle">点击以下问题开始诊断</div>
+                </div>
+            </div>
+            
+            <div class="panel-content">
+                <div class="step-indicator">
+                    <div class="step active">
+                        <div class="step-number">1</div>
+                        <div>选择问题</div>
+                    </div>
+                    <div class="step-separator">›</div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div>分析原因</div>
+                    </div>
+                    <div class="step-separator">›</div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div>查看方案</div>
+                    </div>
+                </div>
+                
+                <div class="category-section">
+                    <div class="category-title">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>常见修复体问题</span>
+                    </div>
+                    <ul class="problem-list" id="problemList">
+                        <!-- 问题列表将通过JavaScript动态生成 -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 第二步：原因分析面板 -->
+        <div class="panel" id="causePanel">
+            <div class="panel-header">
+                <i class="fas fa-search"></i>
+                <div>
+                    <div class="panel-title">第二步：分析原因</div>
+                    <div class="panel-subtitle">点击原因查看对应解决方案</div>
+                </div>
+            </div>
+            
+            <div class="panel-content">
+                <div class="step-indicator">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div>选择问题</div>
+                    </div>
+                    <div class="step-separator">›</div>
+                    <div class="step active">
+                        <div class="step-number">2</div>
+                        <div>分析原因</div>
+                    </div>
+                    <div class="step-separator">›</div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div>查看方案</div>
+                    </div>
+                </div>
+                
+                <div class="empty-state" id="causeEmptyState">
+                    <i class="fas fa-search"></i>
+                    <h3>请先选择问题</h3>
+                    <p>在左侧面板中选择一个问题，此处将显示相关的原因分析</p>
+                </div>
+                
+                <div id="causeContent" style="display: none;">
+                    <div class="category-section">
+                        <div class="category-title">
+                            <i class="fas fa-user-md"></i>
+                            <span id="clinicalTitle">临床因素</span>
+                        </div>
+                        <ul class="cause-list" id="clinicalCauseList">
+                            <!-- 临床原因列表将通过JavaScript动态生成 -->
+                        </ul>
+                    </div>
+                    
+                    <div class="category-section">
+                        <div class="category-title">
+                            <i class="fas fa-industry"></i>
+                            <span id="labTitle">技工因素</span>
+                        </div>
+                        <ul class="cause-list" id="labCauseList">
+                            <!-- 技工原因列表将通过JavaScript动态生成 -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 第三步：解决方案面板 -->
+        <div class="panel" id="solutionPanel">
+            <div class="panel-header">
+                <i class="fas fa-check-circle"></i>
+                <div>
+                    <div class="panel-title">第三步：解决方案</div>
+                    <div class="panel-subtitle">针对选定原因的解决措施</div>
+                </div>
+            </div>
+            
+            <div class="panel-content">
+                <div class="step-indicator">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div>选择问题</div>
+                    </div>
+                    <div class="step-separator">›</div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div>分析原因</div>
+                    </div>
+                    <div class="step-separator">›</div>
+                    <div class="step active">
+                        <div class="step-number">3</div>
+                        <div>查看方案</div>
+                    </div>
+                </div>
+                
+                <div class="empty-state" id="solutionEmptyState">
+                    <i class="fas fa-lightbulb"></i>
+                    <h3>请先选择原因</h3>
+                    <p>在中间面板中选择一个原因，此处将显示对应的解决方案</p>
+                </div>
+                
+                <div id="solutionContent" style="display: none;">
+                    <div class="category-section">
+                        <div class="category-title">
+                            <i class="fas fa-tools"></i>
+                            <span>解决方案</span>
+                        </div>
+                        <ul class="solution-list" id="solutionList">
+                            <!-- 解决方案列表将通过JavaScript动态生成 -->
+                        </ul>
+                    </div>
+                    
+                    <div class="solution-detail" id="solutionDetail">
+                        <div class="solution-detail-title">
+                            <i class="fas fa-info-circle"></i>
+                            <span>执行要点</span>
+                        </div>
+                        <div class="solution-detail-content" id="solutionDetailContent">
+                            <!-- 解决方案详细内容将通过JavaScript动态生成 -->
+                        </div>
+                    </div>
+                    
+                    <div class="path-display" id="pathDisplay">
+                        <div class="path-title">
+                            <i class="fas fa-route"></i>
+                            <span>诊断路径</span>
+                        </div>
+                        <div class="path-steps" id="pathSteps">
+                            <!-- 诊断路径将通过JavaScript动态生成 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>© 2023 牙科修复体问题诊断系统 | 基于临床经验总结，具体问题请结合实际情况判断</p>
+            <div class="counter">
+                <div class="counter-item">
+                    <div class="counter-number" id="totalProblems">12</div>
+                    <div class="counter-label">问题类型</div>
+                </div>
+                <div class="counter-item">
+                    <div class="counter-number" id="totalCauses">64</div>
+                    <div class="counter-label">原因分析</div>
+                </div>
+                <div class="counter-item">
+                    <div class="counter-number" id="totalSolutions">58</div>
+                    <div class="counter-label">解决方案</div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // 牙科修复体问题诊断数据 - 逐层结构
+        const dentalDiagnosisData = {
+            problems: [
+                {
+                    id: 1,
+                    title: "义齿无法就位",
+                    icon: "fas fa-ban",
+                    clinicalCauses: [
+                        { 
+                            id: 101, 
+                            text: "牙体制备缺乏共同就位道，存在倒凹或制锁点",
+                            solutions: [
+                                "重新制备基牙，医生要严格遵循制备标准",
+                                "确保所有基牙的轴壁平行或轻微聚合（2-5度）",
+                                "消除所有倒凹和制锁点",
+                                "必要时使用平行仪辅助预备"
+                            ],
+                            detail: "重新备牙时要使用合适的车针，确保所有基牙的轴壁相互平行或轻微聚合，消除任何倒凹或制锁点。使用硅橡胶导板检查预备量是否足够。"
+                        },
+                        { 
+                            id: 102, 
+                            text: "灌模时水粉比不当，出现气泡或变形",
+                            solutions: [
+                                "重新取模，注意排龈、取模规范",
+                                "严格按照材料说明调配石膏",
+                                "使用真空搅拌机减少气泡",
+                                "在合适的时间灌模"
+                            ],
+                            detail: "取模时应使用合适的托盘和印模材料，确保印模完整无气泡。灌模时按正确水粉比调配石膏，使用振荡器排出气泡，避免过早脱模。"
+                        },
+                        { 
+                            id: 103, 
+                            text: "取模不清晰，或排龈操作不当",
+                            solutions: [
+                                "重新取模，注意排龈操作规范",
+                                "使用合适的排龈线和排龈膏",
+                                "确保印模边缘清晰完整",
+                                "取模前充分止血"
+                            ],
+                            detail: "排龈时使用合适的排龈线，放置时间充足但不损伤牙龈。取模时确保印模材料充分流动到肩台区域，获得清晰的边缘形态。"
+                        },
+                        { 
+                            id: 104, 
+                            text: "模型或基牙损伤，邻牙倒凹未处理",
+                            solutions: [
+                                "重新取模，保护模型完整性",
+                                "处理邻牙倒凹后再取模",
+                                "使用模型修整机修整邻牙倒凹",
+                                "技工室填补倒凹"
+                            ],
+                            detail: "取模前检查邻牙是否有倒凹，必要时进行适当修整。取模和灌模过程中避免损伤模型。技工室制作前填补不影响修复体就位的倒凹。"
+                        }
+                    ],
+                    labCauses: [
+                        { 
+                            id: 201, 
+                            text: "边缘延伸不合理",
+                            solutions: [
+                                "技工要准确判断颈缘和肩台延伸",
+                                "使用显微镜检查边缘清晰度",
+                                "按照医生标记的边缘线制作",
+                                "与临床医生沟通确认边缘位置"
+                            ],
+                            detail: "技工应准确判断颈缘线，修复体边缘应刚好终止在预备体边缘，既不能过长也不能过短。使用放大设备确保边缘清晰度。"
+                        },
+                        { 
+                            id: 202, 
+                            text: "倒凹填补过多或不足",
+                            solutions: [
+                                "合理填补倒凹，不影响修复体就位",
+                                "使用合适的填补材料",
+                                "填补后检查模型完整性",
+                                "与医生沟通填补范围和程度"
+                            ],
+                            detail: "填补倒凹时既要保证修复体能顺利就位，又不能改变基牙形态。填补材料应与石膏颜色区分，便于识别。填补后检查模型是否完整。"
+                        },
+                        { 
+                            id: 203, 
+                            text: "模型损伤，邻接过紧",
+                            solutions: [
+                                "保护模型，避免损伤",
+                                "修复体邻接适当，不能过紧",
+                                "使用邻接测试片检查邻接松紧度",
+                                "轻微调磨邻接过紧处"
+                            ],
+                            detail: "制作过程中避免损伤模型，特别是邻牙区域。修复体邻接应适当，能通过一根牙线但有一定阻力。使用邻接测试片确保邻接合适。"
+                        },
+                        { 
+                            id: 204, 
+                            text: "标记不清晰导致修复体设计偏差",
+                            solutions: [
+                                "清晰标记边缘线、就位道等",
+                                "使用不同颜色标记不同结构",
+                                "重要标记拍照留存",
+                                "与医生确认标记含义"
+                            ],
+                            detail: "医生应在模型上清晰标记边缘线、就位道方向、邻接关系等。技工应理解所有标记含义，按标记要求设计制作修复体。"
+                        }
+                    ]
+                },
+                {
+                    id: 2,
+                    title: "咬合过高",
+                    icon: "fas fa-teeth",
+                    clinicalCauses: [
+                        { 
+                            id: 105, 
+                            text: "未制作临时冠，导致基牙伸长",
+                            solutions: [
+                                "临床上建议使用临时冠，保证基牙稳定",
+                                "临时冠应恢复适当咬合",
+                                "临时冠边缘密合，防止基牙敏感",
+                                "临时冠使用时间不宜过长"
+                            ],
+                            detail: "备牙后应立即制作临时冠，防止基牙移位或伸长。临时冠应恢复适当咬合关系，边缘密合，保护基牙并维持间隙。"
+                        },
+                        { 
+                            id: 106, 
+                            text: "制备颌间距离不足",
+                            solutions: [
+                                "重新备牙，严格按照颌间制备标准操作",
+                                "确保足够的修复空间",
+                                "使用咬合记录材料记录正确颌位",
+                                "必要时调整对颌牙"
+                            ],
+                            detail: "预备时应确保足够的修复空间，通常金属修复体需要0.5-1.0mm，全瓷修复体需要1.0-2.0mm。使用硅橡胶导板检查预备量是否足够。"
+                        }
+                    ],
+                    labCauses: [
+                        { 
+                            id: 205, 
+                            text: "颈缘延伸过多，导致义齿未完全就位",
+                            solutions: [
+                                "技工应准确判断颈缘，修整咬合记录",
+                                "确保修复体完全就位后再建立咬合",
+                                "检查修复体边缘是否过长",
+                                "轻微调磨过长边缘"
+                            ],
+                            detail: "修复体制作前应确保完全就位，避免因边缘过长导致修复体悬空。咬合记录应在修复体完全就位状态下取得。"
+                        }
+                    ]
+                },
+                {
+                    id: 3,
+                    title: "咬合过低",
+                    icon: "fas fa-teeth-open",
+                    clinicalCauses: [
+                        { 
+                            id: 107, 
+                            text: "咬合记录不准确，咬合偏低",
+                            solutions: [
+                                "重新取模，保证取模、咬合记录要规范",
+                                "使用合适的咬合记录材料",
+                                "在正确颌位关系下记录咬合",
+                                "记录后立即灌模，防止变形"
+                            ],
+                            detail: "咬合记录应在患者处于正确颌位关系时进行，使用适当的咬合记录材料，记录后应尽快灌模，防止材料变形。"
+                        }
+                    ],
+                    labCauses: [
+                        { 
+                            id: 206, 
+                            text: "瓷层堆积过薄，未能形成稳定接触点",
+                            solutions: [
+                                "技工在堆瓷过程中，注意恢复正常的咬合接触",
+                                "确保瓷层厚度足够",
+                                "建立稳定的咬合接触点",
+                                "烧结后检查咬合，必要时添加瓷粉"
+                            ],
+                            detail: "堆瓷时应恢复足够的瓷层厚度，建立稳定的咬合接触点。烧结后检查咬合，如接触不足可添加瓷粉重新烧结，但次数不宜过多。"
+                        }
+                    ]
+                },
+                {
+                    id: 4,
+                    title: "食物嵌塞（垂直性）",
+                    icon: "fas fa-apple-alt",
+                    clinicalCauses: [
+                        { 
+                            id: 108, 
+                            text: "对颌存在楔形缺损",
+                            solutions: [
+                                "应在取模前先处理楔形缺损",
+                                "充填修复楔形缺损",
+                                "调整对颌牙形态",
+                                "制作修复体时考虑对颌牙情况"
+                            ],
+                            detail: "取模前应检查对颌牙情况，如有楔形缺损应先进行充填修复。修复体设计时应考虑对颌牙形态，避免形成食物嵌塞区。"
+                        }
+                    ],
+                    labCauses: [
+                        { 
+                            id: 207, 
+                            text: "邻接不紧密或接触区过大/过小",
+                            solutions: [
+                                "技工应严格按照标准制作邻接面",
+                                "确保邻接既密合又不过度",
+                                "使用邻接测试片检查邻接松紧度",
+                                "邻接区位置和大小要适当"
+                            ],
+                            detail: "邻接区应位于牙齿邻面的龈1/3到中1/3交界处，大小适中，既能让牙线通过又有一定阻力。制作时使用邻接测试片检查。"
+                        }
+                    ]
+                },
+                {
+                    id: 5,
+                    title: "边缘不密合",
+                    icon: "fas fa-expand-alt",
+                    clinicalCauses: [
+                        { 
+                            id: 109, 
+                            text: "备牙不光滑，存在支点",
+                            solutions: [
+                                "临床注意备牙平整",
+                                "使用合适的车针序列",
+                                "备牙后抛光预备体表面",
+                                "检查预备体是否光滑连续"
+                            ],
+                            detail: "预备时应使用序列车针，从粗到细，确保预备体表面光滑，无尖锐线角或支点。预备后应抛光，为修复体就位创造条件。"
+                        }
+                    ],
+                    labCauses: [
+                        { 
+                            id: 208, 
+                            text: "分模复位不完整，导致咬合和边缘偏差",
+                            solutions: [
+                                "技工分模要精确，避免损伤模型",
+                                "使用精确的印模材料复制模型",
+                                "分模前做好定位标记",
+                                "复位时确保完全就位"
+                            ],
+                            detail: "分模时应使用精确的印模材料，做好定位标记，确保分模和复位准确。分模和复位过程中避免损伤模型边缘。"
+                        }
+                    ]
+                },
+                {
+                    id: 6,
+                    title: "颜色问题",
+                    icon: "fas fa-palette",
+                    clinicalCauses: [
+                        { 
+                            id: 110, 
+                            text: "牙体制备不足，导致修复体厚度不够",
+                            solutions: [
+                                "医生要保证足够的修复空间",
+                                "全瓷修复体需1.0-2.0mm厚度",
+                                "使用硅橡胶导板检查预备量",
+                                "必要时重新备牙"
+                            ],
+                            detail: "全瓷修复体需要足够的厚度才能呈现良好的美学效果，通常需要1.0-2.0mm的修复空间。预备不足会导致修复体过薄，影响颜色和强度。"
+                        }
+                    ],
+                    labCauses: [
+                        { 
+                            id: 209, 
+                            text: "堆瓷、上釉或内染技术欠佳",
+                            solutions: [
+                                "技工提升堆瓷与染色技术",
+                                "充分还原天然牙层次",
+                                "使用高质量的瓷粉和染色剂",
+                                "参考邻牙和比色板"
+                            ],
+                            detail: "堆瓷时应分层堆筑，模拟天然牙的层次结构。内染和外染结合使用，还原天然牙的色调、饱和度和明度。参考邻牙和比色板进行调整。"
+                        }
+                    ]
+                },
+                {
+                    id: 7,
+                    title: "崩瓷",
+                    icon: "fas fa-crack",
+                    clinicalCauses: [
+                        { 
+                            id: 111, 
+                            text: "对合牙牙尖过于锐利",
+                            solutions: [
+                                "调整对合牙锐利牙尖",
+                                "降低功能尖斜度",
+                                "制作修复体时考虑对颌牙情况",
+                                "夜磨牙患者建议使用保护垫"
+                            ],
+                            detail: "修复前应检查对颌牙，如有锐利牙尖应进行调整。修复体设计时应考虑对颌牙情况，避免形成过陡的斜面接触。夜磨牙患者应制作保护垫。"
+                        }
+                    ],
+                    labCauses: [
+                        { 
+                            id: 210, 
+                            text: "瓷层过薄或咬合过紧",
+                            solutions: [
+                                "技工在设计时确保瓷层厚度合理",
+                                "建立适当的咬合接触",
+                                "避免瓷层过薄区域",
+                                "金瓷结合处要有足够支撑"
+                            ],
+                            detail: "瓷层应有足够的厚度，通常最薄处不低于0.8mm。咬合接触应均匀分散，避免集中在某一点。金瓷结合处应有足够的金属支撑。"
+                        }
+                    ]
+                }
+            ]
+        };
+
+        // 应用状态
+        let currentProblem = null;
+        let currentCause = null;
+        let currentPath = [];
+        let savedPaths = JSON.parse(localStorage.getItem('dentalSavedPaths')) || [];
+
+        // DOM元素
+        const problemList = document.getElementById('problemList');
+        const causePanel = document.getElementById('causePanel');
+        const causeEmptyState = document.getElementById('causeEmptyState');
+        const causeContent = document.getElementById('causeContent');
+        const clinicalCauseList = document.getElementById('clinicalCauseList');
+        const labCauseList = document.getElementById('labCauseList');
+        const solutionPanel = document.getElementById('solutionPanel');
+        const solutionEmptyState = document.getElementById('solutionEmptyState');
+        const solutionContent = document.getElementById('solutionContent');
+        const solutionList = document.getElementById('solutionList');
+        const solutionDetail = document.getElementById('solutionDetail');
+        const solutionDetailContent = document.getElementById('solutionDetailContent');
+        const pathDisplay = document.getElementById('pathDisplay');
+        const pathSteps = document.getElementById('pathSteps');
+        
+        // 计数器
+        const totalProblemsElem = document.getElementById('totalProblems');
+        const totalCausesElem = document.getElementById('totalCauses');
+        const totalSolutionsElem = document.getElementById('totalSolutions');
+
+        // 初始化应用
+        function init() {
+            renderProblemList();
+            updateCounters();
+            
+            // 默认选择第一个问题
+            if (dentalDiagnosisData.problems.length > 0) {
+                selectProblem(dentalDiagnosisData.problems[0]);
+            }
+            
+            // 更新步骤指示器
+            updateStepIndicators();
+        }
+
+        // 渲染问题列表
+        function renderProblemList() {
+            problemList.innerHTML = '';
+            
+            dentalDiagnosisData.problems.forEach(problem => {
+                const li = document.createElement('li');
+                li.className = `problem-item ${currentProblem && currentProblem.id === problem.id ? 'active' : ''}`;
+                li.dataset.id = problem.id;
+                
+                li.innerHTML = `
+                    <div class="problem-text">${problem.title}</div>
+                    <div class="item-icon">
+                        <i class="${problem.icon}"></i>
+                    </div>
+                `;
+                
+                li.addEventListener('click', () => {
+                    selectProblem(problem);
+                });
+                
+                problemList.appendChild(li);
+            });
+        }
+
+        // 选择问题
+        function selectProblem(problem) {
+            currentProblem = problem;
+            currentCause = null;
+            currentPath = [{type: 'problem', text: problem.title}];
+            
+            // 更新问题列表中的活动状态
+            document.querySelectorAll('.problem-item').forEach(item => {
+                item.classList.remove('active');
+                if (parseInt(item.dataset.id) === problem.id) {
+                    item.classList.add('active');
+                }
+            });
+            
+            // 显示原因面板
+            renderCausePanel(problem);
+            
+            // 清空解决方案面板
+            solutionContent.style.display = 'none';
+            solutionEmptyState.style.display = 'block';
+            
+            // 更新步骤指示器
+            updateStepIndicators();
+            
+            // 更新路径显示
+            updatePathDisplay();
+        }
+
+        // 渲染原因面板
+        function renderCausePanel(problem) {
+            // 隐藏空状态，显示内容
+            causeEmptyState.style.display = 'none';
+            causeContent.style.display = 'block';
+            
+            // 更新面板标题
+            document.querySelector('#causePanel .panel-subtitle').textContent = `问题：${problem.title}`;
+            
+            // 清空原因列表
+            clinicalCauseList.innerHTML = '';
+            labCauseList.innerHTML = '';
+            
+            // 渲染临床原因
+            if (problem.clinicalCauses && problem.clinicalCauses.length > 0) {
+                problem.clinicalCauses.forEach(cause => {
+                    const li = document.createElement('li');
+                    li.className = 'cause-item';
+                    li.dataset.id = cause.id;
+                    
+                    li.innerHTML = `
+                        <div class="cause-text">${cause.text}</div>
+                        <div class="item-icon">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    `;
+                    
+                    li.addEventListener('click', () => {
+                        selectCause(cause, 'clinical');
+                    });
+                    
+                    clinicalCauseList.appendChild(li);
+                });
+            } else {
+                clinicalCauseList.innerHTML = '<li class="cause-item" style="cursor: default; background: #f8f9fa;"><div class="cause-text">暂无临床因素</div></li>';
+            }
+            
+            // 渲染技工原因
+            if (problem.labCauses && problem.labCauses.length > 0) {
+                problem.labCauses.forEach(cause => {
+                    const li = document.createElement('li');
+                    li.className = 'cause-item';
+                    li.dataset.id = cause.id;
+                    
+                    li.innerHTML = `
+                        <div class="cause-text">${cause.text}</div>
+                        <div class="item-icon">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    `;
+                    
+                    li.addEventListener('click', () => {
+                        selectCause(cause, 'lab');
+                    });
+                    
+                    labCauseList.appendChild(li);
+                });
+            } else {
+                labCauseList.innerHTML = '<li class="cause-item" style="cursor: default; background: #f8f9fa;"><div class="cause-text">暂无技工因素</div></li>';
+            }
+            
+            // 更新原因列表中的活动状态
+            updateCauseActiveState();
+        }
+
+        // 选择原因
+        function selectCause(cause, type) {
+            currentCause = cause;
+            currentPath = [
+                {type: 'problem', text: currentProblem.title},
+                {type: 'cause', text: cause.text}
+            ];
+            
+            // 更新原因列表中的活动状态
+            updateCauseActiveState();
+            
+            // 显示解决方案面板
+            renderSolutionPanel(cause);
+            
+            // 更新步骤指示器
+            updateStepIndicators();
+            
+            // 更新路径显示
+            updatePathDisplay();
+        }
+
+        // 更新原因活动状态
+        function updateCauseActiveState() {
+            document.querySelectorAll('.cause-item').forEach(item => {
+                item.classList.remove('active');
+                if (currentCause && parseInt(item.dataset.id) === currentCause.id) {
+                    item.classList.add('active');
+                }
+            });
+        }
+
+        // 渲染解决方案面板
+        function renderSolutionPanel(cause) {
+            // 隐藏空状态，显示内容
+            solutionEmptyState.style.display = 'none';
+            solutionContent.style.display = 'block';
+            
+            // 更新面板标题
+            document.querySelector('#solutionPanel .panel-subtitle').textContent = `问题：${currentProblem.title} | 原因：${cause.text}`;
+            
+            // 清空解决方案列表
+            solutionList.innerHTML = '';
+            
+            // 渲染解决方案
+            if (cause.solutions && cause.solutions.length > 0) {
+                cause.solutions.forEach((solution, index) => {
+                    const li = document.createElement('li');
+                    li.className = 'solution-item';
+                    
+                    li.innerHTML = `
+                        <div class="solution-text">${solution}</div>
+                        <div class="item-icon">
+                            <i class="fas fa-check"></i>
+                        </div>
+                    `;
+                    
+                    solutionList.appendChild(li);
+                });
+            } else {
+                solutionList.innerHTML = '<li class="solution-item" style="cursor: default; background: #f8f9fa;"><div class="solution-text">暂无解决方案</div></li>';
+            }
+            
+            // 渲染解决方案详情
+            if (cause.detail) {
+                solutionDetail.style.display = 'block';
+                solutionDetailContent.textContent = cause.detail;
+            } else {
+                solutionDetail.style.display = 'none';
+            }
+        }
+
+        // 更新步骤指示器
+        function updateStepIndicators() {
+            // 重置所有步骤
+            document.querySelectorAll('.step').forEach(step => {
+                step.classList.remove('active');
+            });
+            
+            // 根据当前状态激活相应步骤
+            if (currentProblem && !currentCause) {
+                // 第一步激活
+                document.querySelectorAll('.step-indicator').forEach(indicator => {
+                    indicator.querySelectorAll('.step')[0].classList.add('active');
+                });
+            } else if (currentProblem && currentCause) {
+                // 第二步激活（原因面板）和第三步激活（解决方案面板）
+                const causeIndicator = document.querySelector('#causePanel .step-indicator');
+                const solutionIndicator = document.querySelector('#solutionPanel .step-indicator');
+                
+                if (causeIndicator) {
+                    causeIndicator.querySelectorAll('.step')[1].classList.add('active');
+                }
+                
+                if (solutionIndicator) {
+                    solutionIndicator.querySelectorAll('.step')[2].classList.add('active');
+                }
+            }
+        }
+
+        // 更新路径显示
+        function updatePathDisplay() {
+            if (currentPath.length === 0) {
+                pathDisplay.style.display = 'none';
+                return;
+            }
+            
+            pathDisplay.style.display = 'block';
+            pathSteps.innerHTML = '';
+            
+            currentPath.forEach((step, index) => {
+                const stepElem = document.createElement('div');
+                stepElem.className = 'path-step';
+                
+                let icon = '';
+                if (step.type === 'problem') {
+                    icon = '<i class="fas fa-question-circle"></i>';
+                } else if (step.type === 'cause') {
+                    icon = '<i class="fas fa-exclamation-circle"></i>';
+                }
+                
+                stepElem.innerHTML = `${icon} ${step.text}`;
+                pathSteps.appendChild(stepElem);
+                
+                // 添加箭头（除了最后一个）
+                if (index < currentPath.length - 1) {
+                    const arrow = document.createElement('div');
+                    arrow.className = 'path-arrow';
+                    arrow.innerHTML = '<i class="fas fa-arrow-right"></i>';
+                    pathSteps.appendChild(arrow);
+                }
+            });
+        }
+
+        // 更新计数器
+        function updateCounters() {
+            totalProblemsElem.textContent = dentalDiagnosisData.problems.length;
+            
+            // 计算总原因和解决方案数量
+            let totalCauses = 0;
+            let totalSolutions = 0;
+            
+            dentalDiagnosisData.problems.forEach(problem => {
+                totalCauses += (problem.clinicalCauses ? problem.clinicalCauses.length : 0);
+                totalCauses += (problem.labCauses ? problem.labCauses.length : 0);
+                
+                // 计算所有原因的解决方案数量
+                if (problem.clinicalCauses) {
+                    problem.clinicalCauses.forEach(cause => {
+                        totalSolutions += (cause.solutions ? cause.solutions.length : 0);
+                    });
+                }
+                
+                if (problem.labCauses) {
+                    problem.labCauses.forEach(cause => {
+                        totalSolutions += (cause.solutions ? cause.solutions.length : 0);
+                    });
+                }
+            });
+            
+            totalCausesElem.textContent = totalCauses;
+            totalSolutionsElem.textContent = totalSolutions;
+        }
+
+        // 重置诊断
+        function resetDiagnosis() {
+            currentProblem = dentalDiagnosisData.problems[0];
+            currentCause = null;
+            currentPath = [{type: 'problem', text: currentProblem.title}];
+            
+            selectProblem(currentProblem);
+            
+            // 更新步骤指示器
+            updateStepIndicators();
+            
+            // 更新路径显示
+            updatePathDisplay();
+        }
+
+        // 保存当前路径
+        function saveCurrentPath() {
+            if (currentPath.length < 2) {
+                alert('请先完成问题→原因的选择路径');
+                return;
+            }
+            
+            const pathToSave = {
+                id: Date.now(),
+                problem: currentProblem.title,
+                cause: currentCause.text,
+                solutions: currentCause.solutions,
+                date: new Date().toLocaleString()
+            };
+            
+            savedPaths.push(pathToSave);
+            localStorage.setItem('dentalSavedPaths', JSON.stringify(savedPaths));
+            
+            alert('诊断路径已保存！');
+        }
+
+        // 打印当前诊断
+        function printCurrentDiagnosis() {
+            if (!currentProblem || !currentCause) {
+                alert('请先完成问题→原因的选择路径');
+                return;
+            }
+            
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html>
+                    <head>
+                        <title>牙科修复体诊断报告</title>
+                        <style>
+                            body { font-family: Arial, sans-serif; padding: 20px; }
+                            h1 { color: #1a237e; border-bottom: 2px solid #1a237e; padding-bottom: 10px; }
+                            h2 { color: #333; margin-top: 25px; }
+                            .info { background: #f5f5f5; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+                            .section { margin-bottom: 25px; }
+                            .section-title { font-weight: bold; color: #555; margin-bottom: 10px; }
+                            ul { padding-left: 20px; }
+                            li { margin-bottom: 8px; line-height: 1.5; }
+                            .footer { margin-top: 40px; font-size: 12px; color: #777; text-align: center; }
+                        </style>
+                    </head>
+                    <body>
+                        <h1>牙科修复体诊断报告</h1>
+                        
+                        <div class="info">
+                            <p><strong>诊断时间:</strong> ${new Date().toLocaleString()}</p>
+                            <p><strong>问题类型:</strong> ${currentProblem.title}</p>
+                            <p><strong>具体原因:</strong> ${currentCause.text}</p>
+                        </div>
+                        
+                        <div class="section">
+                            <div class="section-title">解决方案：</div>
+                            <ul>
+                                ${currentCause.solutions.map(solution => `<li>${solution}</li>`).join('')}
+                            </ul>
+                        </div>
+                        
+                        ${currentCause.detail ? `
+                        <div class="section">
+                            <div class="section-title">执行要点：</div>
+                            <p>${currentCause.detail}</p>
+                        </div>
+                        ` : ''}
+                        
+                        <div class="footer">
+                            打印时间: ${new Date().toLocaleString()}<br>
+                            来源: 牙科修复体问题诊断系统
+                        </div>
+                    </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.focus();
+            setTimeout(() => {
+                printWindow.print();
+            }, 500);
+        }
+
+        // 为按钮添加事件监听
+        document.addEventListener('DOMContentLoaded', function() {
+            init();
+            
+            // 重置按钮
+            document.querySelector('.reset-btn').addEventListener('click', resetDiagnosis);
+            
+            // 保存路径按钮
+            document.querySelector('.save-path-btn').addEventListener('click', saveCurrentPath);
+            
+            // 打印按钮
+            document.querySelector('.print-btn').addEventListener('click', printCurrentDiagnosis);
+        });
+    </script>
+</body>
+</html>
